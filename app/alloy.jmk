@@ -1,0 +1,59 @@
+
+task("pre:compile", function(event, logger){
+	
+	var fs = require("fs");
+	var xmldoc  = require('xmldoc');
+	var tiappFile = event.dir.project + "/tiapp.xml";
+	
+	logger.info("----- PRECOMPILE -----");
+	logger.info("- Reading " + tiappFile);
+	var xml = fs.readFileSync(tiappFile, "utf8");
+	var tinode = new xmldoc.XmlDocument(xml);
+	
+	// extract some choice chunks (may not use all of them)
+	var id = tinode.valueWithPath("id");
+	var version = tinode.valueWithPath('version');
+	var desc = tinode.valueWithPath('description');
+	var sdk = tinode.valueWithPath('sdk-version');
+	var copyright = tinode.valueWithPath('copyright');
+	var publisher = tinode.valueWithPath('publisher');
+	var url = tinode.valueWithPath('url');
+	var name = tinode.valueWithPath('name');
+
+	
+	// now create our JSDuck config file
+	var data = {
+		"--":["app"],
+		"--no-source": true,
+		"--title": "Project: " + name + " (" +  version + ")",		
+		"--footer": "Copyright " + copyright + " ( built using Ti SDK:" + sdk + ")",
+		"--output": "./appdocs",
+		"--ignore-global": true,
+    	"--external": [
+        	"Alloy",
+        	"Backbone.*",
+        	"Moment",
+        	"Controller",
+        	"Ti.*",
+        	"Titanium.*",
+        	"Point",
+        	"Dimension"
+    	]		
+	};
+	logger.info("- Generating jsduck.json");
+	fs.writeFileSync("jsduck.json", JSON.stringify(data));
+	
+
+	
+});
+
+
+task("post:compile", function(event, logger){
+	
+	// Run JS DUCK on source
+	logger.info("----- DOCUMENTING -----");
+	var exec = require("child_process").exec;
+	exec("jsduck");
+	logger.info("- JSDuck Documentation has been generated.");
+			
+});
